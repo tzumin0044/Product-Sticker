@@ -320,7 +320,9 @@
                 <div class="panel-title">
                     <span>待列印清單</span>
                     <div>
-                        <button class="btn-clear" style="border-color: #10b981; background-color: #ecfdf5; color: #047857; margin-right: 10px;" onclick="addCustomItem()">+ 自訂品項</button>
+                        <button class="btn-clear"
+                            style="border-color: #10b981; background-color: #ecfdf5; color: #047857; margin-right: 10px;"
+                            onclick="addCustomItem()">+ 自訂品項</button>
                         <button class="btn-clear" onclick="clearAll()">全部刪除</button>
                     </div>
                 </div>
@@ -355,8 +357,8 @@
             { id: "A020B0101", name: "杏鮑菇B", defaultWeight: "3", unit: "KG" },
             { id: "A020C1101", name: "杏鮑菇小C", defaultWeight: "1", unit: "KG" },
             { id: "A06000304", name: "好菇道有機鴻喜菇", defaultWeight: "", unit: "包" },
-            { id: "A140A0101", name: "鮑魚菇A", defaultWeight: "1", unit: "600g/包" },
-            { id: "A15000101", name: "好菇道舞菇", defaultWeight: "", unit: "100g/包" },
+            { id: "A140A0101", name: "鮑魚菇A", defaultWeight: "1", unit: "包" },
+            { id: "A15000101", name: "好菇道舞菇", defaultWeight: "", unit: "包" },
             { id: "E040B0101", name: "櫛瓜M", defaultWeight: "", unit: "KG" },
             { id: "E040C0101", name: "櫛瓜S", defaultWeight: "", unit: "KG" },
             { id: "J02000101", name: "青蔥", defaultWeight: "1", unit: "KG" },
@@ -396,7 +398,7 @@
         const printItemsTbody = document.getElementById('print-items');
         const emptyMsg = document.getElementById('empty-msg');
 
-        printItemsTbody.addEventListener('keydown', function(e) {
+        printItemsTbody.addEventListener('keydown', function (e) {
             if (e.key === 'Enter') {
                 const targetCell = e.target.closest('td');
                 const targetRow = e.target.closest('tr');
@@ -476,12 +478,12 @@
                 const idNode = row.cells[0].children[1];
                 const name = nameNode.tagName === 'INPUT' ? nameNode.value : nameNode.innerText;
                 const id = idNode.tagName === 'INPUT' ? idNode.value : idNode.innerText;
-                
+
                 const spec = row.cells[1].querySelector('input').value;
-                
+
                 const unitNode = row.cells[2].querySelector('input');
                 const unit = unitNode ? unitNode.value : row.cells[2].innerText;
-                
+
                 const qtyToPrint = parseInt(row.cells[3].querySelector('input').value) || 1;
 
                 let displaySpec = spec + unit;
