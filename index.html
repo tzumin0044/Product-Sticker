@@ -574,7 +574,7 @@
                 <span>🍄</span> 乾香菇系列
             </button>
             <button class="tab-btn" data-tab="dtf" onclick="switchTab('dtf')">
-                <span>🏷️</span> 鼎泰豐系列
+                <span>🏷️</span> 鼎泰豐採收日貼
             </button>
         </nav>
 
@@ -641,7 +641,7 @@
                 <!-- 3. 鼎泰豐 Panel -->
                 <div id="tab-content-dtf" class="tab-content">
                     <div class="panel-title">
-                        鼎泰豐貼紙參數
+                        鼎泰豐採收日貼
                     </div>
                     <div class="form-group">
                         <label for="dtf-harvest-date">採收日期：</label>
@@ -744,8 +744,18 @@
         }
         updateMushroomExpiryDate();
 
-        // 頁籤切換邏輯
+        // 當前選取頁籤種類 (default, mushroom, dtf)
+        let currentTab = 'default';
+
+        function getTabLabel(tab) {
+            if (tab === 'mushroom') return '乾香菇系列';
+            if (tab === 'dtf') return '鼎泰豐採收日貼';
+            return '風間、森森系列';
+        }
+
+        // 頁籤切換邏輯 (自動過濾顯示對應系列的待列印清單)
         function switchTab(tabName) {
+            currentTab = tabName;
             document.querySelectorAll('.tab-btn').forEach(btn => {
                 btn.classList.toggle('active', btn.dataset.tab === tabName);
             });
@@ -753,6 +763,29 @@
                 content.classList.remove('active');
             });
             document.getElementById(`tab-content-${tabName}`).classList.add('active');
+
+            updateTableVisibility();
+        }
+
+        // 動態過濾表格，確保不同系列不混用
+        function updateTableVisibility() {
+            const rows = printItemsTbody.querySelectorAll('tr');
+            let visibleCount = 0;
+            rows.forEach(row => {
+                if (row.dataset.type === currentTab) {
+                    row.style.display = '';
+                    visibleCount++;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+
+            if (visibleCount === 0) {
+                emptyMsg.style.display = 'block';
+                emptyMsg.innerText = `尚未選取 ${getTabLabel(currentTab)} 品項，請從左側點選新增`;
+            } else {
+                emptyMsg.style.display = 'none';
+            }
         }
 
         // 乾香菇 Chip 選擇
@@ -813,7 +846,6 @@
 
         // 加入「風間、森森」預設品項
         function addToPrintList(item) {
-            emptyMsg.style.display = 'none';
             const tr = document.createElement('tr');
             tr.dataset.type = 'default';
             tr.dataset.itemId = item.id;
@@ -830,15 +862,18 @@
                 <td><button class="btn-remove" onclick="this.parentElement.parentElement.remove(); checkEmpty();">✕</button></td>
             `;
             printItemsTbody.appendChild(tr);
+            updateTableVisibility();
         }
 
         // 加入「自訂品項」
         function addCustomItem() {
-            emptyMsg.style.display = 'none';
             const tr = document.createElement('tr');
-            tr.dataset.type = 'default';
+            tr.dataset.type = currentTab;
+            const badgeClass = currentTab === 'mushroom' ? 'mushroom' : (currentTab === 'dtf' ? 'dtf' : 'default');
+            const badgeLabel = currentTab === 'mushroom' ? '乾香菇' : (currentTab === 'dtf' ? '鼎泰豐' : '自訂');
+
             tr.innerHTML = `
-                <td><span class="type-badge default">自訂</span></td>
+                <td><span class="type-badge ${badgeClass}">${badgeLabel}</span></td>
                 <td>
                     <input type="text" style="width: 100%; margin-bottom: 4px; padding: 6px; border: 1px solid var(--border); border-radius: 4px; font-size: 13px;" placeholder="品項名稱...">
                     <input type="text" style="width: 100%; font-size: 11px; padding: 4px; border: 1px solid var(--border); border-radius: 4px;" placeholder="品項代碼(可空)...">
@@ -849,11 +884,11 @@
                 <td><button class="btn-remove" onclick="this.parentElement.parentElement.remove(); checkEmpty();">✕</button></td>
             `;
             printItemsTbody.appendChild(tr);
+            updateTableVisibility();
         }
 
         // 加入「乾香菇」品項
         function addMushroomItem() {
-            emptyMsg.style.display = 'none';
             const weightVal = document.getElementById('mushroom-weight').value.trim();
             const periodNum = document.getElementById('mushroom-period-val').value.trim() || '2';
             const periodUnit = document.getElementById('mushroom-period-unit').value || '年';
@@ -884,11 +919,11 @@
                 <td><button class="btn-remove" onclick="this.parentElement.parentElement.remove(); checkEmpty();">✕</button></td>
             `;
             printItemsTbody.appendChild(tr);
+            updateTableVisibility();
         }
 
         // 加入「鼎泰豐」品項
         function addDtfItem() {
-            emptyMsg.style.display = 'none';
             const harvestDateInput = document.getElementById('dtf-harvest-date').value;
             const formattedDate = harvestDateInput ? harvestDateInput.replace(/-/g, '/') : '';
             const qtyVal = parseInt(document.getElementById('dtf-qty').value) || 1;
@@ -905,30 +940,30 @@
                     <div style="font-size:13px; font-weight:500;">採收日期：</div>
                     <input type="text" value="${formattedDate}" style="width:110px; padding:3px 6px; font-size:13px; font-weight:bold;">
                 </td>
-                <td><span style="color:#64748b; font-size:12px;">鼎泰豐標籤</span></td>
+                <td><span style="color:#64748b; font-size:12px;">鼎泰豐採收日貼</span></td>
                 <td><input type="number" class="input-qty" value="${qtyVal}" min="1"></td>
                 <td><button class="btn-remove" onclick="this.parentElement.parentElement.remove(); checkEmpty();">✕</button></td>
             `;
             printItemsTbody.appendChild(tr);
+            updateTableVisibility();
         }
 
         function checkEmpty() {
-            if (printItemsTbody.children.length === 0) {
-                emptyMsg.style.display = 'block';
-            }
+            updateTableVisibility();
         }
 
         function clearAll() {
-            if (printItemsTbody.children.length === 0) return;
-            if (confirm('確定要清空所有待列印品項嗎？')) {
-                printItemsTbody.innerHTML = '';
+            const activeRows = Array.from(printItemsTbody.querySelectorAll('tr')).filter(r => r.dataset.type === currentTab);
+            if (activeRows.length === 0) return;
+            if (confirm(`確定要清空【${getTabLabel(currentTab)}】的所有待列印品項嗎？`)) {
+                activeRows.forEach(row => row.remove());
                 checkEmpty();
             }
         }
 
-        // 渲染/更新列印區域 (支援 Ctrl+P 及按鈕列印)
+        // 渲染/更新列印區域 (僅印出目前 Active 頁籤的品項，不可混用)
         function renderPrintArea() {
-            const rows = printItemsTbody.querySelectorAll('tr');
+            const rows = Array.from(printItemsTbody.querySelectorAll('tr')).filter(r => r.dataset.type === currentTab);
             if (rows.length === 0) return false;
 
             const printArea = document.getElementById('print-area');
@@ -1039,9 +1074,9 @@
 
         // 點擊按鈕列印
         function handlePrint() {
-            const rows = printItemsTbody.querySelectorAll('tr');
-            if (rows.length === 0) {
-                alert('請先加入品項');
+            const activeRows = Array.from(printItemsTbody.querySelectorAll('tr')).filter(r => r.dataset.type === currentTab);
+            if (activeRows.length === 0) {
+                alert(`請先加入【${getTabLabel(currentTab)}】的品項`);
                 return;
             }
             renderPrintArea();
