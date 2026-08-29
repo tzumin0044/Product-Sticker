@@ -926,13 +926,10 @@
             }
         }
 
-        // 核心列印渲染邏輯
-        function handlePrint() {
+        // 渲染/更新列印區域 (支援 Ctrl+P 及按鈕列印)
+        function renderPrintArea() {
             const rows = printItemsTbody.querySelectorAll('tr');
-            if (rows.length === 0) {
-                alert('請先加入品項');
-                return;
-            }
+            if (rows.length === 0) return false;
 
             const printArea = document.getElementById('print-area');
             printArea.innerHTML = '';
@@ -1032,7 +1029,22 @@
                     }
                 }
             });
+            return true;
+        }
 
+        // 監聽瀏覽器 Ctrl+P / 列印快捷鍵即時更新
+        window.addEventListener('beforeprint', function () {
+            renderPrintArea();
+        });
+
+        // 點擊按鈕列印
+        function handlePrint() {
+            const rows = printItemsTbody.querySelectorAll('tr');
+            if (rows.length === 0) {
+                alert('請先加入品項');
+                return;
+            }
+            renderPrintArea();
             window.print();
         }
     </script>
