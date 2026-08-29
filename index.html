@@ -574,7 +574,7 @@
                 <span>🍄</span> 乾香菇系列
             </button>
             <button class="tab-btn" data-tab="dtf" onclick="switchTab('dtf')">
-                <span>🏷️</span> 鼎泰豐採收日貼
+                <span>🏷️</span> 鼎泰豐採收日
             </button>
         </nav>
 
@@ -641,11 +641,12 @@
                 <!-- 3. 鼎泰豐 Panel -->
                 <div id="tab-content-dtf" class="tab-content">
                     <div class="panel-title">
-                        鼎泰豐採收日貼
+                        鼎泰豐採收日
                     </div>
                     <div class="form-group">
                         <label for="dtf-harvest-date">採收日期：</label>
                         <input type="date" id="dtf-harvest-date" class="form-control">
+                        <small style="color: #64748b; font-size: 12px; margin-top: 4px; display: block;">💡 說明：採收日 = 進貨日 - 1</small>
                     </div>
                     <div class="form-group">
                         <label for="dtf-qty">列印張數：</label>
@@ -669,7 +670,7 @@
                 <div id="print-table-container">
                     <table>
                         <thead>
-                            <tr>
+                            <tr id="table-head-tr">
                                 <th>類型</th>
                                 <th>品項 / 內容</th>
                                 <th>規格 / 重量 / 日期</th>
@@ -709,9 +710,24 @@
 
         // 日期預設值
         const todayStr = new Date().toISOString().split('T')[0];
-        document.getElementById('global-ship-date').value = todayStr;
+        const globalShipDateEl = document.getElementById('global-ship-date');
+        globalShipDateEl.value = todayStr;
         document.getElementById('mushroom-pkg-date').value = todayStr;
-        document.getElementById('dtf-harvest-date').value = todayStr;
+
+        // 計算鼎泰豐採收日（採收日 = 進貨日 - 1）
+        function updateDtfHarvestDate() {
+            const shipDateVal = globalShipDateEl.value;
+            if (!shipDateVal) return;
+            const parts = shipDateVal.split('-');
+            const d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+            d.setDate(d.getDate() - 1);
+            const yyyy = d.getFullYear();
+            const mm = String(d.getMonth() + 1).padStart(2, '0');
+            const dd = String(d.getDate()).padStart(2, '0');
+            document.getElementById('dtf-harvest-date').value = `${yyyy}-${mm}-${dd}`;
+        }
+        updateDtfHarvestDate();
+        globalShipDateEl.addEventListener('change', updateDtfHarvestDate);
 
         // 計算有效日期（依據包裝日期 + 保存期限，製造日算第一天：結果扣除 1 天）
         function updateMushroomExpiryDate() {
@@ -749,7 +765,7 @@
 
         function getTabLabel(tab) {
             if (tab === 'mushroom') return '乾香菇系列';
-            if (tab === 'dtf') return '鼎泰豐採收日貼';
+            if (tab === 'dtf') return '鼎泰豐採收日';
             return '風間、森森系列';
         }
 
@@ -769,6 +785,27 @@
 
         // 動態過濾表格，確保不同系列不混用
         function updateTableVisibility() {
+            const headTr = document.getElementById('table-head-tr');
+            if (headTr) {
+                if (currentTab === 'dtf') {
+                    headTr.innerHTML = `
+                        <th>品項 / 內容</th>
+                        <th>採收日期</th>
+                        <th style="width: 90px;">列印張數</th>
+                        <th style="width: 50px;">操作</th>
+                    `;
+                } else {
+                    headTr.innerHTML = `
+                        <th>類型</th>
+                        <th>品項 / 內容</th>
+                        <th>規格 / 重量 / 日期</th>
+                        <th>單位 / 保存資訊</th>
+                        <th style="width: 90px;">列印張數</th>
+                        <th style="width: 50px;">操作</th>
+                    `;
+                }
+            }
+
             const rows = printItemsTbody.querySelectorAll('tr');
             let visibleCount = 0;
             rows.forEach(row => {
@@ -869,20 +906,36 @@
         function addCustomItem() {
             const tr = document.createElement('tr');
             tr.dataset.type = currentTab;
-            const badgeClass = currentTab === 'mushroom' ? 'mushroom' : (currentTab === 'dtf' ? 'dtf' : 'default');
-            const badgeLabel = currentTab === 'mushroom' ? '乾香菇' : (currentTab === 'dtf' ? '鼎泰豐' : '自訂');
 
-            tr.innerHTML = `
-                <td><span class="type-badge ${badgeClass}">${badgeLabel}</span></td>
-                <td>
-                    <input type="text" style="width: 100%; margin-bottom: 4px; padding: 6px; border: 1px solid var(--border); border-radius: 4px; font-size: 13px;" placeholder="品項名稱...">
-                    <input type="text" style="width: 100%; font-size: 11px; padding: 4px; border: 1px solid var(--border); border-radius: 4px;" placeholder="品項代碼(可空)...">
-                </td>
-                <td><input type="text" class="input-value" placeholder="輸入規格..." value="" onfocus="this.select()"></td>
-                <td><input type="text" class="input-value" style="width: 60px; padding: 6px; border: 1px solid var(--border); border-radius: 4px;" placeholder="單位..." value=""></td>
-                <td><input type="number" class="input-qty" value="1" min="1"></td>
-                <td><button class="btn-remove" onclick="this.parentElement.parentElement.remove(); checkEmpty();">✕</button></td>
-            `;
+            if (currentTab === 'dtf') {
+                const harvestDateInput = document.getElementById('dtf-harvest-date').value;
+                const formattedDate = harvestDateInput ? harvestDateInput.replace(/-/g, '/') : '';
+                tr.innerHTML = `
+                    <td>
+                        <input type="text" style="width: 100%; padding: 4px 6px; border: 1px solid var(--border); border-radius: 4px; font-size: 13px; font-weight: 700; color: var(--dtf-color);" value="鼎泰豐">
+                    </td>
+                    <td>
+                        <input type="text" class="dtf-date-input" value="${formattedDate}" style="width:120px; padding:4px 8px; font-size:13px; font-weight:bold; border:1px solid var(--border); border-radius:4px;">
+                    </td>
+                    <td><input type="number" class="input-qty" value="1" min="1"></td>
+                    <td><button class="btn-remove" onclick="this.parentElement.parentElement.remove(); checkEmpty();">✕</button></td>
+                `;
+            } else {
+                const badgeClass = currentTab === 'mushroom' ? 'mushroom' : 'default';
+                const badgeLabel = currentTab === 'mushroom' ? '乾香菇' : '自訂';
+
+                tr.innerHTML = `
+                    <td><span class="type-badge ${badgeClass}">${badgeLabel}</span></td>
+                    <td>
+                        <input type="text" style="width: 100%; margin-bottom: 4px; padding: 6px; border: 1px solid var(--border); border-radius: 4px; font-size: 13px;" placeholder="品項名稱...">
+                        <input type="text" style="width: 100%; font-size: 11px; padding: 4px; border: 1px solid var(--border); border-radius: 4px;" placeholder="品項代碼(可空)...">
+                    </td>
+                    <td><input type="text" class="input-value" placeholder="輸入規格..." value="" onfocus="this.select()"></td>
+                    <td><input type="text" class="input-value" style="width: 60px; padding: 6px; border: 1px solid var(--border); border-radius: 4px;" placeholder="單位..." value=""></td>
+                    <td><input type="number" class="input-qty" value="1" min="1"></td>
+                    <td><button class="btn-remove" onclick="this.parentElement.parentElement.remove(); checkEmpty();">✕</button></td>
+                `;
+            }
             printItemsTbody.appendChild(tr);
             updateTableVisibility();
         }
@@ -932,15 +985,12 @@
             tr.dataset.type = 'dtf';
 
             tr.innerHTML = `
-                <td><span class="type-badge dtf">鼎泰豐</span></td>
                 <td>
-                    <div style="font-weight:700; color: var(--dtf-color); border:1px solid var(--dtf-color); display:inline-block; padding:1px 6px; border-radius:3px; font-size:12px;">鼎泰豐</div>
+                    <div style="font-weight:700; color: var(--dtf-color); border:1px solid var(--dtf-color); display:inline-block; padding:1px 6px; border-radius:3px; font-size:13px;">鼎泰豐</div>
                 </td>
                 <td>
-                    <div style="font-size:13px; font-weight:500;">採收日期：</div>
-                    <input type="text" value="${formattedDate}" style="width:110px; padding:3px 6px; font-size:13px; font-weight:bold;">
+                    <input type="text" class="dtf-date-input" value="${formattedDate}" style="width:120px; padding:4px 8px; font-size:13px; font-weight:bold; border:1px solid var(--border); border-radius:4px;">
                 </td>
-                <td><span style="color:#64748b; font-size:12px;">鼎泰豐採收日貼</span></td>
                 <td><input type="number" class="input-qty" value="${qtyVal}" min="1"></td>
                 <td><button class="btn-remove" onclick="this.parentElement.parentElement.remove(); checkEmpty();">✕</button></td>
             `;
@@ -1045,8 +1095,10 @@
 
                 } else if (type === 'dtf') {
                     // 鼎泰豐標籤處理
-                    const harvestDate = row.cells[2].querySelector('input').value;
-                    const qtyToPrint = parseInt(row.cells[4].querySelector('input').value) || 1;
+                    const dateInput = row.querySelector('.dtf-date-input') || row.cells[1].querySelector('input');
+                    const harvestDate = dateInput ? dateInput.value : '';
+                    const qtyInput = row.querySelector('.input-qty') || row.cells[2].querySelector('input');
+                    const qtyToPrint = parseInt(qtyInput.value) || 1;
 
                     for (let i = 0; i < qtyToPrint; i++) {
                         const sticker = document.createElement('div');
