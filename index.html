@@ -713,7 +713,7 @@
         document.getElementById('mushroom-pkg-date').value = todayStr;
         document.getElementById('dtf-harvest-date').value = todayStr;
 
-        // 計算有效日期（依據包裝日期 + 保存期限 數值與單位：年/月/天）
+        // 計算有效日期（依據包裝日期 + 保存期限，製造日算第一天：結果扣除 1 天）
         function updateMushroomExpiryDate() {
             const pkgDateVal = document.getElementById('mushroom-pkg-date').value;
             if (!pkgDateVal) return;
@@ -721,13 +721,20 @@
             const num = parseInt(document.getElementById('mushroom-period-val').value) || 0;
             const unit = document.getElementById('mushroom-period-unit').value;
 
-            const d = new Date(pkgDateVal);
+            const parts = pkgDateVal.split('-');
+            const year = parseInt(parts[0], 10);
+            const month = parseInt(parts[1], 10) - 1;
+            const day = parseInt(parts[2], 10);
+
+            const d = new Date(year, month, day);
             if (unit === '年') {
                 d.setFullYear(d.getFullYear() + num);
+                d.setDate(d.getDate() - 1);
             } else if (unit === '月') {
                 d.setMonth(d.getMonth() + num);
+                d.setDate(d.getDate() - 1);
             } else if (unit === '天' || unit === '日') {
-                d.setDate(d.getDate() + num);
+                d.setDate(d.getDate() + num - 1);
             }
 
             const yyyy = d.getFullYear();
