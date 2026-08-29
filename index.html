@@ -1,0 +1,1034 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>品規貼標籤列印系統</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text: #1e293b;
+            --border: #e2e8f0;
+            --accent: #f1f5f9;
+            --mushroom-color: #d97706;
+            --dtf-color: #dc2626;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Microsoft JhengHei', '微軟正黑體', 'Noto Sans TC', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            background: var(--card-bg);
+            padding: 20px 30px;
+            border-radius: 16px;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+        }
+
+        h1 {
+            font-size: 22px;
+            color: var(--primary);
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .tab-nav {
+            display: flex;
+            background: #e2e8f0;
+            padding: 4px;
+            border-radius: 12px;
+            gap: 4px;
+            margin-bottom: 20px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 12px 20px;
+            border: none;
+            background: transparent;
+            font-size: 15px;
+            font-weight: 600;
+            color: #64748b;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .tab-btn:hover {
+            color: var(--text);
+        }
+
+        .tab-btn.active {
+            background: white;
+            color: var(--primary);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+        }
+
+        .tab-btn.active[data-tab="mushroom"] {
+            color: var(--mushroom-color);
+        }
+
+        .tab-btn.active[data-tab="dtf"] {
+            color: var(--dtf-color);
+        }
+
+        .date-picker {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .date-picker label {
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        input[type="date"],
+        input[type="text"],
+        input[type="number"],
+        select {
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 15px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        input:focus,
+        select:focus {
+            border-color: var(--primary);
+        }
+
+        .main-layout {
+            display: grid;
+            grid-template-columns: 360px 1fr;
+            gap: 20px;
+        }
+
+        .panel {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            height: fit-content;
+        }
+
+        .panel-title {
+            font-size: 17px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--accent);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .item-search {
+            width: 100%;
+            margin-bottom: 15px;
+        }
+
+        .item-list {
+            max-height: 480px;
+            overflow-y: auto;
+        }
+
+        .item-card {
+            padding: 12px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .item-card:hover {
+            background-color: var(--accent);
+            border-color: var(--primary);
+            transform: translateY(-1px);
+        }
+
+        .item-info .code {
+            font-size: 12px;
+            color: #64748b;
+            display: block;
+        }
+
+        .item-info .name {
+            font-weight: 500;
+        }
+
+        .unit-tag {
+            font-size: 12px;
+            background: #dbeafe;
+            color: #1e40af;
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+
+        /* Form Group Styles for Custom Tabs */
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 6px;
+            color: #475569;
+        }
+
+        .form-control {
+            width: 100%;
+        }
+
+        .chip-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+
+        .chip {
+            padding: 8px 14px;
+            border: 1.5px solid var(--border);
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            background: white;
+            transition: all 0.2s;
+        }
+
+        .chip:hover {
+            border-color: var(--mushroom-color);
+            color: var(--mushroom-color);
+        }
+
+        .chip.selected {
+            background: var(--mushroom-color);
+            border-color: var(--mushroom-color);
+            color: white;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            text-align: left;
+            padding: 12px;
+            background: var(--accent);
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        td {
+            padding: 12px;
+            border-bottom: 1px solid var(--border);
+            font-size: 14px;
+        }
+
+        .type-badge {
+            display: inline-block;
+            font-size: 11px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+
+        .type-badge.default {
+            background: #e0f2fe;
+            color: #0369a1;
+        }
+
+        .type-badge.mushroom {
+            background: #fef3c7;
+            color: #b45309;
+        }
+
+        .type-badge.dtf {
+            background: #fee2e2;
+            color: #b91c1c;
+        }
+
+        .btn-remove {
+            color: #ef4444;
+            cursor: pointer;
+            border: none;
+            background: none;
+            font-size: 18px;
+            padding: 2px 6px;
+        }
+
+        .btn-remove:hover {
+            color: #b91c1c;
+        }
+
+        .btn {
+            padding: 10px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+            font-size: 15px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-hover);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+        }
+
+        .btn-mushroom {
+            background-color: var(--mushroom-color);
+            color: white;
+            width: 100%;
+        }
+
+        .btn-mushroom:hover {
+            background-color: #b45309;
+            box-shadow: 0 4px 12px rgba(217, 119, 6, 0.3);
+        }
+
+        .btn-dtf {
+            background-color: var(--dtf-color);
+            color: white;
+            width: 100%;
+        }
+
+        .btn-dtf:hover {
+            background-color: #b91c1c;
+            box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+        }
+
+        .btn-clear {
+            padding: 5px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid #fee2e2;
+            background-color: #fff1f2;
+            color: #e11d48;
+        }
+
+        .btn-clear:hover {
+            background-color: #ffe4e6;
+            border-color: #fda4af;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #64748b;
+        }
+
+        .input-value {
+            width: 100px;
+        }
+
+        .input-qty {
+            width: 80px;
+        }
+
+        /* ---------------- PRINT STYLES ---------------- */
+        @media print {
+            @page {
+                size: 35mm 25mm;
+                margin: 0;
+            }
+
+            .no-print {
+                display: none !important;
+            }
+
+            .print-only {
+                display: block !important;
+            }
+
+            body {
+                padding: 0;
+                margin: 0;
+                background: white;
+            }
+
+            .sticker {
+                width: 35mm;
+                height: 25mm;
+                padding: 1.2mm 1.5mm;
+                box-sizing: border-box;
+                display: flex;
+                flex-direction: column;
+                justify-content: space-between;
+                page-break-after: always;
+                overflow: hidden;
+                font-family: 'Microsoft JhengHei', '微軟正黑體', 'Noto Sans TC', sans-serif;
+                color: black;
+                background: white;
+            }
+
+            /* --- 1. 風間森森 貼紙 --- */
+            .sticker.sticker-default .sticker-title {
+                font-size: 11px;
+                font-weight: 700;
+                text-align: center;
+                letter-spacing: 0.5px;
+                line-height: 1.2;
+            }
+
+            .sticker.sticker-default .sticker-row {
+                font-size: 10.5px;
+                line-height: 1.2;
+                display: flex;
+                align-items: flex-start;
+            }
+
+            .sticker.sticker-default .sticker-label {
+                font-weight: 500;
+                flex-shrink: 0;
+            }
+
+            /* --- 2. 乾香菇 貼紙 --- */
+            .sticker.sticker-mushroom {
+                padding: 0.6mm 1mm;
+                justify-content: space-between;
+            }
+
+            .sticker.sticker-mushroom .m-row {
+                line-height: 1.18;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            .sticker.sticker-mushroom .m-title {
+                font-size: 12px;
+                font-weight: 700;
+            }
+
+            .sticker.sticker-mushroom .m-weight {
+                font-size: 12px;
+            }
+
+            .sticker.sticker-mushroom .m-sm {
+                font-size: 9px;
+            }
+
+            .sticker.sticker-mushroom .m-expiry {
+                font-weight: 700;
+            }
+
+            .sticker.sticker-mushroom .m-company-info {
+                border-top: 0.5px solid #000;
+                padding-top: 0.5px;
+                margin-top: 0.5px;
+            }
+
+            .sticker.sticker-mushroom .m-company-name-phone {
+                font-size: 6.8px;
+                line-height: 1.15;
+                white-space: nowrap;
+            }
+
+            .sticker.sticker-mushroom .m-company-addr {
+                font-size: 6.8px;
+                line-height: 1.15;
+                white-space: nowrap;
+            }
+
+            /* --- 3. 鼎泰豐 貼紙 --- */
+            .sticker.sticker-dtf {
+                padding: 2mm 2.5mm;
+                justify-content: flex-start;
+                position: relative;
+            }
+
+            .sticker.sticker-dtf .dtf-header {
+                display: flex;
+                justify-content: flex-end;
+                width: 100%;
+                margin-bottom: 2mm;
+            }
+
+            .sticker.sticker-dtf .dtf-badge {
+                border: 1.2px solid #000;
+                padding: 0.5px 3px;
+                font-size: 10.5px;
+                font-weight: 700;
+                line-height: 1.1;
+                border-radius: 1px;
+                display: inline-block;
+            }
+
+            .sticker.sticker-dtf .dtf-body {
+                display: flex;
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1.5mm;
+                padding-left: 1mm;
+            }
+
+            .sticker.sticker-dtf .dtf-label {
+                font-size: 20px;
+                font-weight: 700;
+                letter-spacing: 0.5px;
+            }
+
+            .sticker.sticker-dtf .dtf-date {
+                font-size: 18px;
+                font-weight: 700;
+                letter-spacing: 0.5px;
+            }
+        }
+
+        .print-only {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <header class="no-print">
+            <h1>🏷️ 品規貼標籤列印系統</h1>
+            <div class="header-actions">
+                <div class="date-picker">
+                    <label for="global-ship-date">預設出貨日期：</label>
+                    <input type="date" id="global-ship-date">
+                </div>
+                <button class="btn btn-primary" onclick="handlePrint()">
+                    <span>🖨️</span> 開始列印
+                </button>
+            </div>
+        </header>
+
+        <!-- 頂部 Mode 頁籤切換 nav -->
+        <nav class="tab-nav no-print">
+            <button class="tab-btn active" data-tab="default" onclick="switchTab('default')">
+                <span>📦</span> 風間、森森系列
+            </button>
+            <button class="tab-btn" data-tab="mushroom" onclick="switchTab('mushroom')">
+                <span>🍄</span> 乾香菇系列
+            </button>
+            <button class="tab-btn" data-tab="dtf" onclick="switchTab('dtf')">
+                <span>🏷️</span> 鼎泰豐系列
+            </button>
+        </nav>
+
+        <main class="main-layout no-print">
+            <!-- 左側操作面板 (依 Tab 動態切換) -->
+            <aside class="panel">
+                <!-- 1. 風間、森森 Panel -->
+                <div id="tab-content-default" class="tab-content active">
+                    <div class="panel-title">
+                        預設品項清單
+                        <span style="font-size: 12px; font-weight: normal; color: #64748b;">點擊加入</span>
+                    </div>
+                    <input type="text" id="item-search" class="item-search" placeholder="搜尋品項或代碼...">
+                    <div class="item-list" id="preset-items"></div>
+                </div>
+
+                <!-- 2. 乾香菇 Panel -->
+                <div id="tab-content-mushroom" class="tab-content">
+                    <div class="panel-title">
+                        乾香菇規格選擇
+                    </div>
+                    <div class="form-group">
+                        <label>選擇香菇品項：</label>
+                        <div class="chip-group" id="mushroom-chips">
+                            <div class="chip selected" onclick="selectMushroomChip(this)">乾香菇絲</div>
+                            <div class="chip" onclick="selectMushroomChip(this)">乾香菇[小鈕]</div>
+                            <div class="chip" onclick="selectMushroomChip(this)">乾香菇[小中]</div>
+                            <div class="chip" onclick="selectMushroomChip(this)">乾香菇[大中]</div>
+                            <div class="chip" onclick="selectMushroomChip(this)">乾香菇腳</div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="mushroom-weight">重量 (KG)：</label>
+                        <input type="text" id="mushroom-weight" class="form-control" value="1" placeholder="例如：1、3、0.5">
+                    </div>
+                    <div class="form-group">
+                        <label for="mushroom-pkg-date">製造/包裝日期：</label>
+                        <input type="date" id="mushroom-pkg-date" class="form-control" onchange="updateMushroomExpiryDate()">
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <div class="form-group">
+                            <label for="mushroom-period-val">保存期限：</label>
+                            <div style="display: flex; gap: 4px;">
+                                <input type="number" id="mushroom-period-val" class="form-control" value="2" min="1" onchange="updateMushroomExpiryDate()" oninput="updateMushroomExpiryDate()" style="flex: 1;">
+                                <select id="mushroom-period-unit" class="form-control" onchange="updateMushroomExpiryDate()" style="width: 60px; padding: 6px 4px;">
+                                    <option value="年" selected>年</option>
+                                    <option value="月">月</option>
+                                    <option value="天">天</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="mushroom-exp-date">有效日期 (自動)：</label>
+                            <input type="text" id="mushroom-exp-date" class="form-control" placeholder="YYYY/MM/DD" readonly style="background-color: #f1f5f9; cursor: not-allowed; font-weight: bold; color: var(--mushroom-color);">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="mushroom-qty">列印張數：</label>
+                        <input type="number" id="mushroom-qty" class="form-control" value="1" min="1">
+                    </div>
+                    <button class="btn btn-mushroom" onclick="addMushroomItem()">+ 加入待列印清單</button>
+                </div>
+
+                <!-- 3. 鼎泰豐 Panel -->
+                <div id="tab-content-dtf" class="tab-content">
+                    <div class="panel-title">
+                        鼎泰豐貼紙參數
+                    </div>
+                    <div class="form-group">
+                        <label for="dtf-harvest-date">採收日期：</label>
+                        <input type="date" id="dtf-harvest-date" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label for="dtf-qty">列印張數：</label>
+                        <input type="number" id="dtf-qty" class="form-control" value="1" min="1">
+                    </div>
+                    <button class="btn btn-dtf" onclick="addDtfItem()">+ 加入待列印清單</button>
+                </div>
+            </aside>
+
+            <!-- 右側待列印表格 -->
+            <section class="panel">
+                <div class="panel-title">
+                    <span>待列印清單</span>
+                    <div>
+                        <button class="btn-clear"
+                            style="border-color: #10b981; background-color: #ecfdf5; color: #047857; margin-right: 10px;"
+                            onclick="addCustomItem()">+ 自訂品項</button>
+                        <button class="btn-clear" onclick="clearAll()">全部刪除</button>
+                    </div>
+                </div>
+                <div id="print-table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>類型</th>
+                                <th>品項 / 內容</th>
+                                <th>規格 / 重量 / 日期</th>
+                                <th>單位 / 保存資訊</th>
+                                <th style="width: 90px;">列印張數</th>
+                                <th style="width: 50px;">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="print-items">
+                        </tbody>
+                    </table>
+                    <div id="empty-msg" class="empty-state">
+                        尚未選取品項，請從左側點選新增
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <div id="print-area" class="print-only"></div>
+    </div>
+
+    <script>
+        // 預設資料
+        const presetData = [
+            { id: "A010B0101", name: "香菇 [ 中 ]", defaultWeight: "3", unit: "KG" },
+            { id: "A020A0101", name: "杏鮑菇A", defaultWeight: "1", unit: "KG" },
+            { id: "A020B0101", name: "杏鮑菇B", defaultWeight: "3", unit: "KG" },
+            { id: "A020C1101", name: "杏鮑菇小C", defaultWeight: "1", unit: "KG" },
+            { id: "A06000304", name: "好菇道有機鴻喜菇", defaultWeight: "", unit: "包" },
+            { id: "A140A0101", name: "鮑魚菇A", defaultWeight: "1", unit: "包" },
+            { id: "A15000101", name: "好菇道舞菇", defaultWeight: "", unit: "包" },
+            { id: "E040B0101", name: "櫛瓜M", defaultWeight: "", unit: "KG" },
+            { id: "E040C0101", name: "櫛瓜S", defaultWeight: "", unit: "KG" },
+            { id: "J02000101", name: "青蔥", defaultWeight: "1", unit: "KG" },
+            { id: "L030A0102", name: "日本山藥 [ 4L ]", defaultWeight: "1", unit: "支" }
+        ];
+
+        // 日期預設值
+        const todayStr = new Date().toISOString().split('T')[0];
+        document.getElementById('global-ship-date').value = todayStr;
+        document.getElementById('mushroom-pkg-date').value = todayStr;
+        document.getElementById('dtf-harvest-date').value = todayStr;
+
+        // 計算有效日期（依據包裝日期 + 保存期限 數值與單位：年/月/天）
+        function updateMushroomExpiryDate() {
+            const pkgDateVal = document.getElementById('mushroom-pkg-date').value;
+            if (!pkgDateVal) return;
+            
+            const num = parseInt(document.getElementById('mushroom-period-val').value) || 0;
+            const unit = document.getElementById('mushroom-period-unit').value;
+
+            const d = new Date(pkgDateVal);
+            if (unit === '年') {
+                d.setFullYear(d.getFullYear() + num);
+            } else if (unit === '月') {
+                d.setMonth(d.getMonth() + num);
+            } else if (unit === '天' || unit === '日') {
+                d.setDate(d.getDate() + num);
+            }
+
+            const yyyy = d.getFullYear();
+            const mm = String(d.getMonth() + 1).padStart(2, '0');
+            const dd = String(d.getDate()).padStart(2, '0');
+            document.getElementById('mushroom-exp-date').value = `${yyyy}/${mm}/${dd}`;
+        }
+        updateMushroomExpiryDate();
+
+        // 頁籤切換邏輯
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.tab === tabName);
+            });
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(`tab-content-${tabName}`).classList.add('active');
+        }
+
+        // 乾香菇 Chip 選擇
+        let selectedMushroomName = '乾香菇絲';
+        function selectMushroomChip(chipEl) {
+            document.querySelectorAll('#mushroom-chips .chip').forEach(c => c.classList.remove('selected'));
+            chipEl.classList.add('selected');
+            selectedMushroomName = chipEl.innerText.trim();
+        }
+
+        // 渲染風間森森預設清單
+        const presetItemsContainer = document.getElementById('preset-items');
+        const searchInput = document.getElementById('item-search');
+
+        function renderPresetList(filter = '') {
+            presetItemsContainer.innerHTML = '';
+            const filtered = presetData.filter(item =>
+                item.name.includes(filter) || item.id.includes(filter)
+            );
+
+            filtered.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'item-card';
+                div.innerHTML = `
+                    <div class="item-info">
+                        <span class="code">${item.id}</span>
+                        <span class="name">${item.name}</span>
+                    </div>
+                    <span class="unit-tag">${item.unit}</span>
+                `;
+                div.onclick = () => addToPrintList(item);
+                presetItemsContainer.appendChild(div);
+            });
+        }
+        renderPresetList();
+        searchInput.oninput = (e) => renderPresetList(e.target.value);
+
+        const printItemsTbody = document.getElementById('print-items');
+        const emptyMsg = document.getElementById('empty-msg');
+
+        // Enter 鍵快速跳下一列規格輸入
+        printItemsTbody.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') {
+                const targetCell = e.target.closest('td');
+                const targetRow = e.target.closest('tr');
+                if (targetCell && targetRow && targetCell.cellIndex === 2) {
+                    e.preventDefault();
+                    const nextRow = targetRow.nextElementSibling;
+                    if (nextRow) {
+                        const nextInput = nextRow.cells[2].querySelector('input');
+                        if (nextInput) {
+                            nextInput.focus();
+                        }
+                    }
+                }
+            }
+        });
+
+        // 加入「風間、森森」預設品項
+        function addToPrintList(item) {
+            emptyMsg.style.display = 'none';
+            const tr = document.createElement('tr');
+            tr.dataset.type = 'default';
+            tr.dataset.itemId = item.id;
+            tr.dataset.itemName = item.name;
+            tr.innerHTML = `
+                <td><span class="type-badge default">風間森森</span></td>
+                <td>
+                    <div style="font-weight:500;">${item.name}</div>
+                    <div style="font-size:11px; color:#64748b;">${item.id}</div>
+                </td>
+                <td><input type="text" class="input-value" placeholder="輸入規格..." value="${item.defaultWeight || ''}" onfocus="this.select()"></td>
+                <td>${item.unit}</td>
+                <td><input type="number" class="input-qty" value="1" min="1"></td>
+                <td><button class="btn-remove" onclick="this.parentElement.parentElement.remove(); checkEmpty();">✕</button></td>
+            `;
+            printItemsTbody.appendChild(tr);
+        }
+
+        // 加入「自訂品項」
+        function addCustomItem() {
+            emptyMsg.style.display = 'none';
+            const tr = document.createElement('tr');
+            tr.dataset.type = 'default';
+            tr.innerHTML = `
+                <td><span class="type-badge default">自訂</span></td>
+                <td>
+                    <input type="text" style="width: 100%; margin-bottom: 4px; padding: 6px; border: 1px solid var(--border); border-radius: 4px; font-size: 13px;" placeholder="品項名稱...">
+                    <input type="text" style="width: 100%; font-size: 11px; padding: 4px; border: 1px solid var(--border); border-radius: 4px;" placeholder="品項代碼(可空)...">
+                </td>
+                <td><input type="text" class="input-value" placeholder="輸入規格..." value="" onfocus="this.select()"></td>
+                <td><input type="text" class="input-value" style="width: 60px; padding: 6px; border: 1px solid var(--border); border-radius: 4px;" placeholder="單位..." value=""></td>
+                <td><input type="number" class="input-qty" value="1" min="1"></td>
+                <td><button class="btn-remove" onclick="this.parentElement.parentElement.remove(); checkEmpty();">✕</button></td>
+            `;
+            printItemsTbody.appendChild(tr);
+        }
+
+        // 加入「乾香菇」品項
+        function addMushroomItem() {
+            emptyMsg.style.display = 'none';
+            const weightVal = document.getElementById('mushroom-weight').value.trim();
+            const periodNum = document.getElementById('mushroom-period-val').value.trim() || '2';
+            const periodUnit = document.getElementById('mushroom-period-unit').value || '年';
+            const periodVal = `${periodNum}${periodUnit}`;
+            const expDateVal = document.getElementById('mushroom-exp-date').value.trim();
+            const qtyVal = parseInt(document.getElementById('mushroom-qty').value) || 1;
+
+            const tr = document.createElement('tr');
+            tr.dataset.type = 'mushroom';
+            tr.dataset.itemName = selectedMushroomName;
+            tr.dataset.period = periodVal;
+            tr.dataset.expDate = expDateVal;
+
+            tr.innerHTML = `
+                <td><span class="type-badge mushroom">乾香菇</span></td>
+                <td><div style="font-weight:600; color: var(--mushroom-color);">${selectedMushroomName}</div></td>
+                <td>
+                    <div style="display:flex; align-items:center; gap:4px;">
+                        <input type="text" class="input-value" value="${weightVal}" placeholder="重量..." style="width:70px;">
+                        <span style="font-size:12px; color:#64748b;">KG</span>
+                    </div>
+                </td>
+                <td>
+                    <div style="font-size:12px;">保存：${periodVal} (產地:台灣)</div>
+                    <div style="font-size:12px; font-weight:500;">有效：<input type="text" value="${expDateVal}" readonly style="width:95px; padding:2px 4px; font-size:12px; background:#f1f5f9; cursor:not-allowed;"></div>
+                </td>
+                <td><input type="number" class="input-qty" value="${qtyVal}" min="1"></td>
+                <td><button class="btn-remove" onclick="this.parentElement.parentElement.remove(); checkEmpty();">✕</button></td>
+            `;
+            printItemsTbody.appendChild(tr);
+        }
+
+        // 加入「鼎泰豐」品項
+        function addDtfItem() {
+            emptyMsg.style.display = 'none';
+            const harvestDateInput = document.getElementById('dtf-harvest-date').value;
+            const formattedDate = harvestDateInput ? harvestDateInput.replace(/-/g, '/') : '';
+            const qtyVal = parseInt(document.getElementById('dtf-qty').value) || 1;
+
+            const tr = document.createElement('tr');
+            tr.dataset.type = 'dtf';
+
+            tr.innerHTML = `
+                <td><span class="type-badge dtf">鼎泰豐</span></td>
+                <td>
+                    <div style="font-weight:700; color: var(--dtf-color); border:1px solid var(--dtf-color); display:inline-block; padding:1px 6px; border-radius:3px; font-size:12px;">鼎泰豐</div>
+                </td>
+                <td>
+                    <div style="font-size:13px; font-weight:500;">採收日期：</div>
+                    <input type="text" value="${formattedDate}" style="width:110px; padding:3px 6px; font-size:13px; font-weight:bold;">
+                </td>
+                <td><span style="color:#64748b; font-size:12px;">鼎泰豐標籤</span></td>
+                <td><input type="number" class="input-qty" value="${qtyVal}" min="1"></td>
+                <td><button class="btn-remove" onclick="this.parentElement.parentElement.remove(); checkEmpty();">✕</button></td>
+            `;
+            printItemsTbody.appendChild(tr);
+        }
+
+        function checkEmpty() {
+            if (printItemsTbody.children.length === 0) {
+                emptyMsg.style.display = 'block';
+            }
+        }
+
+        function clearAll() {
+            if (printItemsTbody.children.length === 0) return;
+            if (confirm('確定要清空所有待列印品項嗎？')) {
+                printItemsTbody.innerHTML = '';
+                checkEmpty();
+            }
+        }
+
+        // 核心列印渲染邏輯
+        function handlePrint() {
+            const rows = printItemsTbody.querySelectorAll('tr');
+            if (rows.length === 0) {
+                alert('請先加入品項');
+                return;
+            }
+
+            const printArea = document.getElementById('print-area');
+            printArea.innerHTML = '';
+
+            const globalShipDate = document.getElementById('global-ship-date').value.replace(/-/g, '/');
+
+            rows.forEach(row => {
+                const type = row.dataset.type || 'default';
+
+                if (type === 'default') {
+                    // 風間、森森標籤處理
+                    let name = row.dataset.itemName;
+                    let id = row.dataset.itemId;
+                    if (!name) {
+                        const nameNode = row.cells[1].children[0];
+                        const idNode = row.cells[1].children[1];
+                        name = nameNode.tagName === 'INPUT' ? nameNode.value : nameNode.innerText;
+                        id = idNode.tagName === 'INPUT' ? idNode.value : idNode.innerText;
+                    }
+
+                    const spec = row.cells[2].querySelector('input').value;
+                    const unitNode = row.cells[3].querySelector('input');
+                    const unit = unitNode ? unitNode.value : row.cells[3].innerText;
+                    const qtyToPrint = parseInt(row.cells[4].querySelector('input').value) || 1;
+
+                    let displaySpec = spec + unit;
+                    if ((id === "E040B0101" || id === "E040C0101") && spec !== "") {
+                        displaySpec = `${spec}.<span style="display:inline-block; width:10mm;"></span>${unit.toUpperCase()}`;
+                    }
+
+                    for (let i = 0; i < qtyToPrint; i++) {
+                        const sticker = document.createElement('div');
+                        sticker.className = 'sticker sticker-default';
+                        sticker.innerHTML = `
+                            <div class="sticker-title">綠園生活有限公司</div>
+                            <div class="sticker-row">
+                                <span class="sticker-label">品名：</span>
+                                <span>${name}</span>
+                            </div>
+                            <div class="sticker-row">
+                                <span class="sticker-label">數量：</span>
+                                <span>${displaySpec}</span>
+                            </div>
+                            <div class="sticker-row">
+                                <span class="sticker-label">出貨日期：</span>
+                                <span>${globalShipDate}</span>
+                            </div>
+                        `;
+                        printArea.appendChild(sticker);
+                    }
+
+                } else if (type === 'mushroom') {
+                    // 乾香菇標籤處理
+                    const name = row.dataset.itemName;
+                    const weightVal = row.cells[2].querySelector('input').value;
+                    const periodVal = row.dataset.period || '2年';
+                    const expDateVal = row.cells[3].querySelector('input').value;
+                    const qtyToPrint = parseInt(row.cells[4].querySelector('input').value) || 1;
+
+                    const weightDisplay = weightVal ? `${weightVal} KG` : '';
+
+                    for (let i = 0; i < qtyToPrint; i++) {
+                        const sticker = document.createElement('div');
+                        sticker.className = 'sticker sticker-mushroom';
+                        sticker.innerHTML = `
+                            <div class="m-row m-title">品名：${name}</div>
+                            <div class="m-row m-weight">重量：${weightDisplay}</div>
+                            <div class="m-row m-sm">保存期限：${periodVal}</div>
+                            <div class="m-row m-sm">產地：台灣</div>
+                            <div class="m-row m-sm m-expiry">有效日期：${expDateVal}</div>
+                            <div class="m-company-info">
+                                <div class="m-company-name-phone">綠園生活有限公司 電話:(04)2330-6276</div>
+                                <div class="m-company-addr">台中市霧峰區五福西路73號</div>
+                            </div>
+                        `;
+                        printArea.appendChild(sticker);
+                    }
+
+                } else if (type === 'dtf') {
+                    // 鼎泰豐標籤處理
+                    const harvestDate = row.cells[2].querySelector('input').value;
+                    const qtyToPrint = parseInt(row.cells[4].querySelector('input').value) || 1;
+
+                    for (let i = 0; i < qtyToPrint; i++) {
+                        const sticker = document.createElement('div');
+                        sticker.className = 'sticker sticker-dtf';
+                        sticker.innerHTML = `
+                            <div class="dtf-header">
+                                <div class="dtf-badge">鼎泰豐</div>
+                            </div>
+                            <div class="dtf-body">
+                                <div class="dtf-label">採收日期</div>
+                                <div class="dtf-date">${harvestDate}</div>
+                            </div>
+                        `;
+                        printArea.appendChild(sticker);
+                    }
+                }
+            });
+
+            window.print();
+        }
+    </script>
+</body>
+
+</html>
