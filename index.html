@@ -910,7 +910,7 @@
                     <div class="form-group">
                         <label for="dtf-harvest-date">採收日期：</label>
                         <input type="date" id="dtf-harvest-date" class="form-control">
-                        <small style="color: #64748b; font-size: 12px; margin-top: 4px; display: block;">💡 說明：採收日 = 進貨日 - 1</small>
+                        <small style="color: #64748b; font-size: 12px; margin-top: 4px; display: block;">💡 說明：採收日 = 進貨日 - 1（限制當日往前推 7 日內，其他反灰）</small>
                     </div>
                     <div class="form-group">
                         <label for="dtf-qty">列印張數：</label>
@@ -973,26 +973,62 @@
             { id: "T02000103", name: "進口蘿美［大包］", defaultWeight: "", unit: "KG" }
         ];
 
+        // 格式化本地日期 YYYY-MM-DD
+        function getLocalDateStr(d = new Date()) {
+            const yyyy = d.getFullYear();
+            const mm = String(d.getMonth() + 1).padStart(2, '0');
+            const dd = String(d.getDate()).padStart(2, '0');
+            return `${yyyy}-${mm}-${dd}`;
+        }
+
         // 日期預設值
-        const todayStr = new Date().toISOString().split('T')[0];
+        const todayStr = getLocalDateStr(new Date());
         const globalShipDateEl = document.getElementById('global-ship-date');
         globalShipDateEl.value = todayStr;
         document.getElementById('mushroom-pkg-date').value = todayStr;
 
-        // 計算鼎泰豐採收日（採收日 = 進貨日 - 1）
+        // 鼎泰豐採收日限制：限制當日往前推 7 日（[當日 - 7日, 當日]），其他反灰
+        const dtfHarvestDateEl = document.getElementById('dtf-harvest-date');
+        const nowObj = new Date();
+        const dtfMaxDateStr = getLocalDateStr(nowObj);
+        const dtfMinObj = new Date(nowObj.getFullYear(), nowObj.getMonth(), nowObj.getDate() - 7);
+        const dtfMinDateStr = getLocalDateStr(dtfMinObj);
+
+        dtfHarvestDateEl.min = dtfMinDateStr;
+        dtfHarvestDateEl.max = dtfMaxDateStr;
+
+        // 計算鼎泰豐採收日（採收日 = 進貨日 - 1，並限制在往前推 7 日範圍內）
         function updateDtfHarvestDate() {
             const shipDateVal = globalShipDateEl.value;
             if (!shipDateVal) return;
             const parts = shipDateVal.split('-');
             const d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
             d.setDate(d.getDate() - 1);
-            const yyyy = d.getFullYear();
-            const mm = String(d.getMonth() + 1).padStart(2, '0');
-            const dd = String(d.getDate()).padStart(2, '0');
-            document.getElementById('dtf-harvest-date').value = `${yyyy}-${mm}-${dd}`;
+            let targetDateStr = getLocalDateStr(d);
+
+            // 若超出範圍則限制在 [dtfMinDateStr, dtfMaxDateStr] 內
+            if (targetDateStr > dtfMaxDateStr) {
+                targetDateStr = dtfMaxDateStr;
+            } else if (targetDateStr < dtfMinDateStr) {
+                targetDateStr = dtfMinDateStr;
+            }
+            dtfHarvestDateEl.value = targetDateStr;
         }
         updateDtfHarvestDate();
         globalShipDateEl.addEventListener('change', updateDtfHarvestDate);
+
+        // 監聽手動選擇或輸入採收日變更，避免日期異常
+        dtfHarvestDateEl.addEventListener('change', function () {
+            if (this.value) {
+                if (this.value > dtfMaxDateStr) {
+                    alert(`採收日不可晚於當日（${dtfMaxDateStr}）！`);
+                    this.value = dtfMaxDateStr;
+                } else if (this.value < dtfMinDateStr) {
+                    alert(`採收日僅限當日往前推 7 日，不可早於（${dtfMinDateStr}）！`);
+                    this.value = dtfMinDateStr;
+                }
+            }
+        });
 
         // 計算有效日期（依據包裝日期 + 保存期限，製造日算第一天：結果扣除 1 天）
         function updateMushroomExpiryDate() {
@@ -1429,8 +1465,16 @@
             tr.dataset.type = currentTab;
 
             if (currentTab === 'dtf') {
-                const harvestDateInput = document.getElementById('dtf-harvest-date').value;
-                const formattedDate = harvestDateInput ? harvestDateInput.replace(/-/g, '/') : '';
+                const harvestDateInput = dtfHarvestDateEl.value;
+                if (!harvestDateInput) {
+                    alert('請先選擇採收日期！');
+                    return;
+                }
+                if (harvestDateInput > dtfMaxDateStr || harvestDateInput < dtfMinDateStr) {
+                    alert(`採收日期超出允許範圍！僅限當日往前推 7 日（${dtfMinDateStr} ～ ${dtfMaxDateStr}）。`);
+                    return;
+                }
+                const formattedDate = harvestDateInput.replace(/-/g, '/');
                 tr.innerHTML = `
                     <td>
                         <input type="text" style="width: 100%; padding: 4px 6px; border: 1px solid var(--border); border-radius: 4px; font-size: 13px; font-weight: 700; color: var(--dtf-color);" value="鼎泰豐">
@@ -1498,8 +1542,16 @@
 
         // 加入「鼎泰豐」品項
         function addDtfItem() {
-            const harvestDateInput = document.getElementById('dtf-harvest-date').value;
-            const formattedDate = harvestDateInput ? harvestDateInput.replace(/-/g, '/') : '';
+            const harvestDateInput = dtfHarvestDateEl.value;
+            if (!harvestDateInput) {
+                alert('請先選擇採收日期！');
+                return;
+            }
+            if (harvestDateInput > dtfMaxDateStr || harvestDateInput < dtfMinDateStr) {
+                alert(`採收日期超出允許範圍！僅限當日往前推 7 日（${dtfMinDateStr} ～ ${dtfMaxDateStr}）。`);
+                return;
+            }
+            const formattedDate = harvestDateInput.replace(/-/g, '/');
             const qtyVal = parseInt(document.getElementById('dtf-qty').value) || 1;
 
             const tr = document.createElement('tr');
@@ -1651,6 +1703,16 @@
             if (activeRows.length === 0) {
                 alert(`請先加入【${getTabLabel(currentTab)}】的品項`);
                 return;
+            }
+            if (currentTab === 'dtf') {
+                for (let row of activeRows) {
+                    const dateInput = row.querySelector('.dtf-date-input') || row.cells[1].querySelector('input');
+                    const harvestDate = dateInput ? dateInput.value.trim().replace(/\//g, '-') : '';
+                    if (!harvestDate || harvestDate < dtfMinDateStr || harvestDate > dtfMaxDateStr) {
+                        alert(`【鼎泰豐】待列印清單中有採收日期（${dateInput ? dateInput.value : ''}）超出範圍（${dtfMinDateStr} ～ ${dtfMaxDateStr}），請更正後再列印！`);
+                        return;
+                    }
+                }
             }
             renderPrintArea();
             window.print();
